@@ -1,5 +1,7 @@
 # Trailhead
 
+> **Work in progress.** Trailhead is actively being developed and tested. The protocol, format, and behavior are all subject to change. Use it, break it, share feedback -- but know that things will shift as we learn what works.
+
 Your agent invokes a skill it hasn't touched in two weeks. Or one you were using yesterday. Either way, it has no idea what happened in prior sessions -- unless it reads full transcripts.
 
 Trailhead turns [Claude Code](https://docs.anthropic.com/en/docs/claude-code) skills into bridges between sessions. Each skill maintains a lightweight index of every session where it contributed to the work. When the skill is loaded, the agent can instantly see what other sessions used it, how deeply, and what they accomplished -- rebuilding a knowledge graph in seconds without transcript reads.
