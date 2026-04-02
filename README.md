@@ -1,8 +1,10 @@
 # Trailhead
 
-You come back to a skill after two weeks. What happened last time? What did you learn? What broke? What got fixed?
+Your agent invokes a skill it hasn't touched in two weeks. Or one you were using yesterday. Either way, it has no idea what happened in prior sessions -- unless it reads full transcripts.
 
-Without Trailhead, you're guessing -- or reading full session transcripts to find out. Trailhead gives your [Claude Code](https://docs.anthropic.com/en/docs/claude-code) skills a memory of how they've been used, so the next session can pick up where the last one left off.
+Trailhead turns [Claude Code](https://docs.anthropic.com/en/docs/claude-code) skills into bridges between sessions. Each skill maintains a lightweight index of every session where it contributed to the work. When the skill is loaded, the agent can instantly see what other sessions used it, how deeply, and what they accomplished -- rebuilding a knowledge graph in seconds without transcript reads.
+
+Skills become nodes. Sessions become edges. Follow the links and the agent reconstructs the full picture of a multi-session project from the skill alone.
 
 ## What it looks like
 
