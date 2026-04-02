@@ -59,17 +59,18 @@ When a skill with Trailhead is loaded, two guards run:
 1. **Deduplication** -- If the current session ID is already in the index, stop. Handles skill reloads within the same session.
 2. **Confidence assessment** -- Score how likely the skill is to contribute. Write the entry regardless of score.
 
-### On session close
+### Cleanup (async, on next activation)
 
-1. Update `lastTouch` to current time
-2. Update `confidence` based on what actually happened -- bump lows that turned out useful, downgrade highs that went unused
-3. Update `summary` if scope changed (started as "reviewing config" but ended up "rebuilding the pipeline")
-4. **Auto-remove** any entry where confidence is "low" and `lastTouch` still equals activation time (loaded but never used)
-5. Update the skill's own docs if new learnings emerged
+Session close is unreliable -- sessions end by running out of context, compacting, or the user moving on. Instead of relying on a close protocol, cleanup runs as a **background subagent** at the start of the next activation:
+
+1. **Auto-remove unused lows** -- Any previous entry with confidence `"low"` and `lastTouch` equal to its activation time gets removed (skill was loaded but never used)
+2. **Flag stale entries** -- Generic or placeholder summaries get noted for removal on the next pass
+
+The subagent runs in the background so the main session isn't blocked.
 
 ### Skills that teach themselves
 
-The close protocol doesn't just maintain the index. It prompts updating the skill's own documentation with new learnings from the session. Every session where a skill contributes is an opportunity for that skill to get better. The session index is the trail of that growth.
+Every session where a skill contributes is an opportunity for that skill to get better. The protocol prompts updating the skill's own documentation with new learnings from the session. The session index is the trail of that growth.
 
 ## When to use Trailhead
 

@@ -90,7 +90,7 @@ Assess how likely the skill is to contribute meaningfully to this session. Inste
 - **medium** -- The request is related to the skill's domain but could go either way
 - **low** -- The skill was triggered by a keyword match but intent is unclear
 
-All confidence levels get an entry written. The close protocol handles cleanup.
+All confidence levels get an entry written. Cleanup happens on the next activation (see below).
 
 ### Writing the Entry
 
@@ -106,17 +106,17 @@ After both guards pass, prepend a new entry to the JSON array (most recent first
 }
 ```
 
-## On Session Close Protocol
+## Cleanup Protocol (runs on next activation)
 
-When wrapping up a session that used a tracked skill:
+Session close is unreliable -- sessions end by running out of context, compacting, or the user moving on. Instead of a close protocol, cleanup happens at the start of the *next* activation, as a background task.
 
-1. **Re-read** the session index
-2. **Find** the current session's entry
-3. **Update `lastTouch`** to the current time
-4. **Update `confidence`** based on what actually happened -- a "low" that turned out useful gets bumped up; a "high" where the skill was never referenced gets downgraded
-5. **Update `summary`** if the scope changed significantly from what was written on activation
-6. **Auto-remove unused lows:** If confidence is `"low"` and `lastTouch` equals the original activation time (meaning the skill was never touched after loading), remove the entry entirely
-7. If the session produced new learnings, update the skill's relevant includes or SKILL.md per that skill's own maintenance instructions
+After writing the current session's entry, launch a **background subagent** (using `run_in_background: true`) to review and clean up previous entries:
+
+1. **Scan** all entries in the session index
+2. **Auto-remove unused lows:** If a previous entry has confidence `"low"` and `lastTouch` equals its `date` timestamp (meaning the skill was loaded but never touched after activation), remove it
+3. **Flag stale entries:** If any entry's summary looks generic or placeholder-like (e.g., "session activated"), note it for potential removal on the next pass
+
+The subagent runs in the background so the main session isn't blocked. If the subagent modifies the index, it writes the updated JSON file directly.
 
 ## File Naming Convention
 
@@ -129,4 +129,4 @@ When wrapping up a session that used a tracked skill:
 - New entries go at the **beginning** of the array (most recent first)
 - Summaries should be one line, specific enough to be useful for context recovery
 - If a session loads multiple tracked skills, each skill's index gets its own entry
-- The confidence field turns the significance filter from a binary gate into a signal -- write first, verify on close
+- The confidence field turns the significance filter from a binary gate into a signal -- write first, clean up on next activation
