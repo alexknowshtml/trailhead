@@ -14,7 +14,7 @@ Meta skill that installs session tracking into any target skill. Every session t
 
 ## What It Does
 
-1. **Creates** `{skill-name}-sessions.md` in the target skill's directory with the standard template
+1. **Creates** `{skill-name}-sessions.json` in the target skill's directory with an empty array
 2. **Adds** an `## On Activation` section to the target SKILL.md (after frontmatter, before first content section)
 3. **Adds** a `## Session History` section to the target SKILL.md (before the last section, or at the end)
 4. **Reports** what was added and commits the changes
@@ -59,18 +59,11 @@ If the user confirms, proceed. If not, stop.
 
 ### Step 3: Create the session index file
 
-Write `.claude/skills/{skill-name}/{skill-name}-sessions.md`:
+Write `.claude/skills/{skill-name}/{skill-name}-sessions.json`:
 
-```markdown
-# {Skill Display Name} -- Session Index
-
-Sessions where significant work was done. Most recent first.
-
-| Date | Session ID | Summary |
-|------|-----------|---------|
+```json
+[]
 ```
-
-Use the skill's `name` field from frontmatter as the display name.
 
 ### Step 4: Add On Activation section to SKILL.md
 
@@ -80,7 +73,7 @@ Insert after the frontmatter closing `---` and before the first `#` heading:
 ## On Activation
 
 Follow the Trailhead protocol in `/.claude/includes/trailhead.md`.
-Session index: `/.claude/skills/{skill-name}/{skill-name}-sessions.md`
+Session index: `/.claude/skills/{skill-name}/{skill-name}-sessions.json`
 ```
 
 If the skill already has an `## On Activation` section, append the two lines to it instead of creating a duplicate section.
@@ -93,13 +86,13 @@ Insert before the last section of the file (or at the end if placement is unclea
 ## Session History
 
 Past sessions with summaries and IDs for easy context recovery:
-**Session index:** `/.claude/skills/{skill-name}/{skill-name}-sessions.md`
+**Session index:** `/.claude/skills/{skill-name}/{skill-name}-sessions.json`
 ```
 
 ### Step 6: Commit
 
 ```bash
-git add .claude/skills/{skill-name}/{skill-name}-sessions.md .claude/skills/{skill-name}/SKILL.md
+git add .claude/skills/{skill-name}/{skill-name}-sessions.json .claude/skills/{skill-name}/SKILL.md
 git commit -m "Add Trailhead session tracking to {skill-name} skill"
 ```
 
@@ -116,4 +109,4 @@ The shared protocol that defines how session tracking works at runtime:
 
 - This installer does not modify the skill's triggers or description
 - The On Activation section is intentionally minimal -- it just points to the shared protocol
-- If the user wants to backfill past sessions, they can search past session transcripts and manually add rows to the index
+- If the user wants to backfill past sessions, they can search past session transcripts and manually add entries to the index
