@@ -1,51 +1,94 @@
 # Trailhead
 
-Session tracking for [Claude Code](https://docs.anthropic.com/en/docs/claude-code) skills. Every session where a tracked skill meaningfully contributes to the work leaves a trail marker, so the next session can find its way back.
+You come back to a skill after two weeks. What happened last time? What did you learn? What broke? What got fixed?
 
-## The Problem
+Without Trailhead, you're guessing -- or reading full session transcripts to find out. Trailhead gives your [Claude Code](https://docs.anthropic.com/en/docs/claude-code) skills a memory of how they've been used, so the next session can pick up where the last one left off.
 
-Claude Code sessions are stateless. When you return to a skill after days or weeks, there's no record of what happened before. You lose context, repeat work, and miss learnings from prior sessions.
+## What it looks like
 
-## What Trailhead Does
-
-Trailhead adds a lightweight JSON session index to any skill. Each time a skill contributes to a session's work, it logs:
-
-- **Date** of the session
-- **Session ID** for context recovery
-- **Confidence** level -- how useful the skill was expected to be (updated on close with what actually happened)
-- **Last touch** timestamp -- when the skill was last actively used in the session
-- **Summary** of how the skill contributed
-
-The index lives alongside the skill, so future sessions can scan it and pick up where the last one left off.
-
-### Example session entry
+A JSON index that lives alongside your skill, updated automatically:
 
 ```json
-{
-  "date": "2026-04-01",
-  "sessionId": "abc123def",
-  "confidence": "high",
-  "lastTouch": "2026-04-01T16:42:00-04:00",
-  "summary": "Used cell maps to update comparison model with new SALT cap logic"
-}
+[
+  {
+    "date": "2026-04-01",
+    "sessionId": "227dd247",
+    "confidence": "high",
+    "lastTouch": "2026-04-01T17:42:00-04:00",
+    "summary": "Used cell maps to update comparison model with new SALT cap logic"
+  },
+  {
+    "date": "2026-03-18",
+    "sessionId": "c3df8fe7",
+    "confidence": "high",
+    "lastTouch": "2026-03-18T15:20:00-04:00",
+    "summary": "Expanded calculator to 10 test scenarios, refactored core logic"
+  },
+  {
+    "date": "2026-03-15",
+    "sessionId": "4c8908f1",
+    "confidence": "medium",
+    "lastTouch": "2026-03-15T11:05:00-04:00",
+    "summary": "Rate verification against source data, corrected two values"
+  }
+]
 ```
 
-### Three Guard Layers
+In 10 seconds you know: what happened, how deep each session went, and which ones are worth recovering full context from.
 
-Trailhead doesn't log every session that touches a skill. Three guards keep the index useful:
+## Why each field matters
 
-1. **Deduplication** -- If the current session is already in the index, skip it (handles skill reloads within a session)
-2. **Confidence scoring** -- Every activation gets a confidence level (high/medium/low). On session close, unused low-confidence entries are auto-removed.
-3. **Installer Gate** -- Warns before installing on utility skills where session history doesn't add value
+**`confidence`** solves the false activation problem. Skills can have broad triggers -- a keyword match might load a skill even when the session isn't really about that skill. Instead of guessing whether to log or skip, Trailhead always writes the entry with a confidence score. On session close, unused low-confidence entries get auto-removed. The index stays useful without a psychic significance filter.
+
+- **high** -- User explicitly asked to work on something this skill owns
+- **medium** -- Related to the skill's domain but not specific
+- **low** -- Keyword match triggered it, intent unclear
+
+**`lastTouch`** tells you depth, not just presence. A session where `lastTouch` is three hours after activation was a deep working session. One where `lastTouch` equals the activation time was a drive-by. When deciding which past session to recover context from, that signal matters.
+
+**`summary`** captures how the skill contributed, not just that it was loaded. Written on activation based on the user's request, then updated on close if scope changed.
+
+## How it works
+
+### On activation
+
+When a skill with Trailhead is loaded, two guards run:
+
+1. **Deduplication** -- If the current session ID is already in the index, stop. Handles skill reloads within the same session.
+2. **Confidence assessment** -- Score how likely the skill is to contribute. Write the entry regardless of score.
+
+### On session close
+
+1. Update `lastTouch` to current time
+2. Update `confidence` based on what actually happened -- bump lows that turned out useful, downgrade highs that went unused
+3. Update `summary` if scope changed (started as "reviewing config" but ended up "rebuilding the pipeline")
+4. **Auto-remove** any entry where confidence is "low" and `lastTouch` still equals activation time (loaded but never used)
+5. Update the skill's own docs if new learnings emerged
+
+### Skills that teach themselves
+
+The close protocol doesn't just maintain the index. It prompts updating the skill's own documentation with new learnings from the session. Every session where a skill contributes is an opportunity for that skill to get better. The session index is the trail of that growth.
+
+## When to use Trailhead
+
+**Good candidates:**
+- Project skills where work compounds across sessions
+- Domain skills with evolving state
+- Skills that manage external artifacts (spreadsheets, websites, databases)
+
+**Skip it for:**
+- Utility skills (credential lookups, tool wrappers)
+- One-shot operations (creating a gist, sending a notification)
+- Skills with no persistent state
+
+**Rule of thumb:** If you'd never ask "what did we do with this skill last time?", it doesn't need Trailhead.
 
 ## Installation
-
-### Option 1: Use the installer skill
 
 Copy the three files into your Claude Code project:
 
 ```
-.claude/skills/trailhead/SKILL.md    # The installer skill
+.claude/skills/trailhead/SKILL.md    # The installer
 .claude/includes/trailhead.md         # The runtime protocol
 .claude/commands/trailhead.md         # The /trailhead slash command
 ```
@@ -56,67 +99,13 @@ Then run:
 /trailhead my-skill-name
 ```
 
-This creates the session index and wires up the On Activation and Session History sections in your skill's SKILL.md automatically.
+The installer creates the session index, adds On Activation and Session History sections to your skill's SKILL.md, and commits the changes.
 
-### Option 2: Manual setup
+### Manual setup
 
-If you prefer to set it up by hand:
+Create `{skill-name}-sessions.json` in the skill's directory with an empty array (`[]`), then add an On Activation section and Session History section to the skill's SKILL.md pointing to the protocol and index file. See the [full protocol](includes/trailhead.md) for details.
 
-1. Create `{skill-name}-sessions.json` in the skill's directory:
-
-```json
-[]
-```
-
-2. Add an **On Activation** section to the skill's SKILL.md (after frontmatter):
-
-```markdown
-## On Activation
-
-Follow the Trailhead protocol in `/.claude/includes/trailhead.md`.
-Session index: `/.claude/skills/{skill-name}/{skill-name}-sessions.json`
-```
-
-3. Add a **Session History** section (wherever makes sense):
-
-```markdown
-## Session History
-
-Past sessions with summaries and IDs for easy context recovery:
-**Session index:** `/.claude/skills/{skill-name}/{skill-name}-sessions.json`
-```
-
-## When to Use Trailhead
-
-**Good candidates:**
-- Project skills where work builds on itself across sessions
-- Domain skills with evolving state
-- Skills that manage external artifacts (spreadsheets, websites, databases)
-
-**Skip it for:**
-- Utility/reference skills (credential lookups, tool wrappers)
-- One-shot operation skills (creating a gist, sending a message)
-- Skills with no persistent state
-
-**Rule of thumb:** If you'd never say "what did we do with this skill last time?", it doesn't need Trailhead.
-
-## How It Works at Runtime
-
-When a skill with Trailhead is loaded, the On Activation protocol runs:
-
-1. **Guard 1 (Deduplication):** Read the session index. If the current session ID is already there, stop.
-2. **Guard 2 (Confidence):** Assess how likely the skill is to contribute to this session. Assign high/medium/low.
-3. **Write entry:** Prepend a new JSON entry with date, session ID, confidence, timestamp, and summary.
-
-When the session wraps up, the On Close protocol:
-
-1. Updates `lastTouch` to the current time
-2. Updates `confidence` based on what actually happened (a "low" that turned out useful gets bumped; a "high" that was never used gets downgraded)
-3. Updates `summary` if scope changed
-4. **Auto-removes** any entry where confidence is "low" and `lastTouch` still equals the original activation time (skill was loaded but never used)
-5. Updates the skill's includes or SKILL.md if new learnings emerged
-
-## File Structure
+## File structure
 
 ```
 .claude/
