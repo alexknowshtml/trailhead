@@ -21,7 +21,7 @@ The index lives alongside the skill, so future sessions can scan it and pick up 
 Trailhead doesn't log every session that touches a skill. Three guards keep the index useful:
 
 1. **Deduplication** -- If the current session is already in the index, skip it (handles skill reloads within a session)
-2. **Significance Filter** -- Only log sessions that modify files, investigate issues, or do design/planning work. Skip incidental loads and read-only access.
+2. **Significance Filter** -- Only log sessions where the skill meaningfully contributed to the work. Skip incidental loads and pass-through usage.
 3. **Installer Gate** -- Warns before installing on utility skills where session history doesn't add value
 
 ## Installation

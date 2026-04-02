@@ -1,6 +1,6 @@
 # Trailhead -- Session Tracking Protocol
 
-Reusable protocol for skills that want to track which Claude Code sessions have worked on them. Every session that does substantive work on a tracked skill leaves a trail marker, so the next session can find its way back.
+Reusable protocol for skills that want to track which Claude Code sessions have used them. Every session where a tracked skill meaningfully contributes to the work leaves a trail marker, so the next session can find its way back.
 
 Any skill can opt in by referencing this protocol and maintaining a `{skill-name}-sessions.md` file in its skill directory. Use `/trailhead {skill-name}` to install.
 
@@ -63,18 +63,21 @@ Read the skill's session index file. If the current session ID already appears i
 
 ### Guard 2: Significance Filter
 
-Before writing an entry, assess whether this session is doing substantive work related to the skill. **Only create an entry if:**
+Before writing an entry, assess whether the skill meaningfully contributed to this session's work. The question isn't "did this session change the skill?" -- it's "did the skill help get work done?"
 
-- The session is likely to **modify files** the skill owns or manages (code, config, spreadsheets, content)
-- The session is **investigating or debugging** something that will produce learnings worth recording
-- The user is doing **planning or design work** that shapes future sessions on this skill
+**Create an entry if the skill:**
+
+- Provided **context, cell maps, or reference data** that guided the session's work
+- Was used to **modify external artifacts** it manages (spreadsheets, websites, databases)
+- Contributed **domain knowledge or procedures** that shaped decisions or debugging
+- Supported **planning or design work** that builds on what the skill knows
 
 **Skip the entry if:**
 - The skill was loaded incidentally (e.g., triggered by a keyword match but the session isn't really about this skill)
-- The session is only **reading** data through the skill without changing anything
-- The session is using the skill as a **utility** for a task that belongs to a different skill
+- The skill was loaded but never actually referenced or used
+- The session is using the skill as a **pass-through utility** (e.g., looking up a single credential)
 
-When in doubt, ask: "Would a future session working on this skill benefit from knowing this session happened?" If no, skip.
+When in doubt, ask: "Would a future session using this skill benefit from knowing this session happened?" If no, skip.
 
 ### Writing the Entry
 
